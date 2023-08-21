@@ -44,7 +44,9 @@ class ActivityItem extends StatelessWidget {
     "Cycling",
     "Strength",
     "Pylometrics",
-    "Flexibility"
+    "Stretching",
+    "Yoga",
+    "Mountain Biking"
   ];
 
   @override

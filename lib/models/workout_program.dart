@@ -3,7 +3,16 @@ import 'package:fitboi_app/services/data_service.dart';
 
 enum ProgramType {
   cardio,
+  running,
   strength,
+  mbiking,
+  cycling,
+  plyometrics,
+  yoga,
+  stretching,
+  swimming,
+  walking,
+  unassigned
 }
 
 class WorkoutProgram {
@@ -20,6 +29,55 @@ class WorkoutProgram {
     required this.workoutDuration,
     required this.programType,
   });
+
+  factory WorkoutProgram.fromJson(Map<String, dynamic> json){
+    ProgramType thisProgramType = ProgramType.unassigned;
+    if (json["programType"] == "strength"){
+      thisProgramType = ProgramType.strength;
+    } else if (json["programType"] == "cardio"){
+      thisProgramType = ProgramType.cardio;
+    }
+    
+    String programTypeString = json["programType"];
+    switch(programTypeString) {
+      case "strength":
+        thisProgramType = ProgramType.strength;
+        break;
+      case "running":
+        thisProgramType = ProgramType.running;
+        break;
+      case "cardio":
+        thisProgramType = ProgramType.cardio;
+        break;
+      case "plyometrics":
+        thisProgramType = ProgramType.plyometrics;
+        break;
+      case "mbiking":
+        thisProgramType = ProgramType.mbiking;
+        break;
+      case "walking":
+        thisProgramType = ProgramType.walking;
+        break;
+      case "swimming":
+        thisProgramType = ProgramType.swimming;
+        break;
+      case "stretching":
+        thisProgramType = ProgramType.stretching;
+        break;
+      case "cycling":
+        thisProgramType = ProgramType.cycling;
+        break;
+    }
+
+    
+    return WorkoutProgram(
+      image: AssetImage(json["assetImageName"]),
+      workoutName: json["workoutName"],
+      workoutDuration: "",
+      calories: "",
+      programType: thisProgramType
+    );
+  }
 
 
 }
