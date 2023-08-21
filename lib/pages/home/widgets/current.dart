@@ -19,7 +19,7 @@ class _CurrentProgramsState extends State<CurrentPrograms> {
   @override
   void initState() {
     super.initState();
-    futureWorkoutPrograms = constructWorkoutProgramsList2();
+    futureWorkoutPrograms = constructWorkoutProgramsList();
     
   }
   void _toggleProgram(ProgramType newType) {
@@ -144,7 +144,7 @@ class ExerciseProgram extends StatelessWidget {
   }
 }
 
-Future<List<dynamic>> constructWorkoutProgramsList2() {
+Future<List<dynamic>> constructWorkoutProgramsList() {
   final apiService = ApiService();
   Future<List<dynamic>> response = apiService.fetchWorkoutPrograms();
   

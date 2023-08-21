@@ -2,8 +2,25 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-class RecentActivities extends StatelessWidget {
+import '../../../models/recent_activity.dart';
+import '../../../models/workout_program.dart';
+import '../../../services/data_service.dart';
+
+class RecentActivities extends StatefulWidget {
   const RecentActivities({super.key});
+
+  @override
+  State<RecentActivities> createState() => _RecentActivitiesState();
+}
+
+class _RecentActivitiesState extends State<RecentActivities> {
+
+  late Future<List<dynamic>> futureRecentActivities;
+
+  @override initState() {
+    super.initState();
+    futureRecentActivities = constructRecentActivitiesList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +38,33 @@ class RecentActivities extends StatelessWidget {
               style: Theme.of(context).textTheme.displayLarge
             ),
             Expanded(
-              child: ListView.builder(
-                itemCount: 10,
-                itemBuilder: (context, index) => ActivityItem(),
+              child: FutureBuilder<List<dynamic>>(
+                future: futureRecentActivities,
+                builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting){
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else if (!snapshot.hasData) {
+                    return Text("No recent activites available");
+                  } else {
+                      return ListView.builder(
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) { 
+                          if (snapshot.data != null) {
+                            RecentActivity recentActivity = RecentActivity.fromJson(snapshot.data![index]);
+                            return ActivityItem(
+                              program: recentActivity.programType,
+                              activityDuration: recentActivity.workoutDuration,
+                              caloriesBurned: recentActivity.caloriesBurned,
+                              workoutImage: recentActivity.workoutImage,
+                              workoutName: recentActivity.workoutName
+                            );
+                          }
+                        },
+                      );
+                  }
+                }
               ),
             )
           ],
@@ -34,24 +75,25 @@ class RecentActivities extends StatelessWidget {
 }
 
 class ActivityItem extends StatelessWidget {
-  const ActivityItem({super.key});
+  final ProgramType program;
+  final String activityDuration;
+  final String caloriesBurned;
+  final AssetImage workoutImage;
+  final String workoutName;
+  const ActivityItem({
+    super.key,
+    required this.program,
+    required this.activityDuration,
+    required this.caloriesBurned,
+    required this.workoutImage,
+    required this.workoutName
+    });
 
-  static const activities = [
-    "Running",
-    "Swimming",
-    "Walking",
-    "Sprints",
-    "Cycling",
-    "Strength",
-    "Pylometrics",
-    "Stretching",
-    "Yoga",
-    "Mountain Biking"
-  ];
+
 
   @override
   Widget build(BuildContext context) {
-    String activity = activities[Random().nextInt(activities.length)];
+   
     return GestureDetector(
       onTap: () {
         Navigator.of(context).pushNamed('/details');
@@ -78,7 +120,7 @@ class ActivityItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: AssetImage('assets/runner.jpg'),
+                    image: workoutImage,
                     fit: BoxFit.fill
                   ),
                   
@@ -89,7 +131,7 @@ class ActivityItem extends StatelessWidget {
             ),
             SizedBox(width: 20),
             Text(
-              activity,
+              workoutName,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w900
@@ -99,14 +141,14 @@ class ActivityItem extends StatelessWidget {
             Icon(Icons.timer, size: 12),
             SizedBox(width: 5),
             Text(
-              '30 mins',
+              activityDuration,
               style: TextStyle(fontSize: 10, fontWeight: FontWeight.w300),
             ),
             SizedBox(width: 10),
             Icon(Icons.wb_sunny_outlined, size: 12),
             SizedBox(width: 5),
             Text(
-              '55 kcals',
+              caloriesBurned,
               style: TextStyle(fontSize: 10, fontWeight: FontWeight.w300),
             ),
             SizedBox(width:20)
@@ -115,4 +157,11 @@ class ActivityItem extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<List<dynamic>> constructRecentActivitiesList(){
+  final apiService = ApiService();
+  Future<List<dynamic>> response = apiService.fetchRecentActivities();
+
+  return response;
 }
