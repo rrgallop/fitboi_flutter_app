@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import '../../../models/workout_program.dart';
@@ -13,27 +14,26 @@ class CurrentPrograms extends StatefulWidget {
 
 class _CurrentProgramsState extends State<CurrentPrograms> {
   
-  late Future<List<WorkoutProgram>> futureWorkoutPrograms;
-  late List<WorkoutProgram> wahahah;
-  ProgramType active = ProgramType.cardio;
+  late Future<List<dynamic>> futureWorkoutPrograms;
+  ProgramType active = ProgramType.unassigned;
   @override
   void initState() {
     super.initState();
-    futureWorkoutPrograms = constructWorkoutProgramsList();
+    futureWorkoutPrograms = constructWorkoutProgramsList2();
+    
   }
   void _toggleProgram(ProgramType newType) {
     setState(() {
-      active = newType;
+      if (newType == active){
+        active = ProgramType.unassigned;
+      } else {
+        active = newType;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    
-    // for current programs list
-    List workoutPrograms = [];
-    
-
     return Column(
       children: [
         Padding(
@@ -57,18 +57,32 @@ class _CurrentProgramsState extends State<CurrentPrograms> {
         SizedBox(
           width: double.infinity,
           height: 100,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            itemCount: workoutPrograms.length,
-            itemBuilder: (context, index) {
-              return ExerciseProgram(
-                program: workoutPrograms[index],
-                isActive: workoutPrograms[index].programType == active,
-                onTap: _toggleProgram
-              );
-            },
-            scrollDirection: Axis.horizontal,
-            separatorBuilder: (context, index) => SizedBox(width: 20),
+          child: FutureBuilder<List<dynamic>>(
+            future: futureWorkoutPrograms,
+            builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting){
+                return CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              } else if (!snapshot.hasData) {
+                return Text("No workout programs available");
+              } else {
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  itemCount: snapshot.data!.length,
+                  itemBuilder: (context, index) {
+                    WorkoutProgram displayProgram = WorkoutProgram.fromJson(snapshot.data![index]);
+                    return ExerciseProgram(
+                      program: displayProgram,
+                      isActive: displayProgram.programType == active,
+                      onTap: _toggleProgram
+                    );
+                  },
+                  scrollDirection: Axis.horizontal,
+                  separatorBuilder: (context, index) => SizedBox(width: 20),
+                );
+              }
+            }
           )
         )
       ]
@@ -101,7 +115,7 @@ class ExerciseProgram extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
           image: DecorationImage(
             colorFilter: ColorFilter.mode(
-              isActive ? Color(0xff1ebdf8).withOpacity(.8) 
+              isActive ? Color(0xff1ebdf8).withOpacity(.8)
                : Colors.white.withOpacity(.8),
                BlendMode.lighten
             ),
@@ -113,8 +127,8 @@ class ExerciseProgram extends StatelessWidget {
         padding: const EdgeInsets.all(15),
         child: DefaultTextStyle.merge(
           style: TextStyle(
-            color: isActive ? Colors.white : Colors.black,
-            fontSize: 10,
+            color: isActive ? Colors.black54 : Colors.black45,
+            fontSize: 20,
             fontWeight: FontWeight.w500,
           ),
           child: Column(
@@ -122,19 +136,6 @@ class ExerciseProgram extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(program.workoutName),
-              Row(
-                children: [
-                  Text(program.calories),
-                  SizedBox(width: 15),
-                  Icon(
-                    Icons.timer, 
-                    color: isActive ? Colors.white : Colors.black, 
-                    size: 10
-                  ),
-                  SizedBox(width: 5),
-                  Text(program.workoutDuration)
-                ],
-              )
             ],
           ),
         )
@@ -143,10 +144,9 @@ class ExerciseProgram extends StatelessWidget {
   }
 }
 
-Future<List<WorkoutProgram>> constructWorkoutProgramsList() async{
-  List<WorkoutProgram> programs = [];
+Future<List<dynamic>> constructWorkoutProgramsList2() {
   final apiService = ApiService();
-  List<dynamic> response = await apiService.fetchWorkoutPrograms();
-  print(response.runtimeType);
-  return programs;
+  Future<List<dynamic>> response = apiService.fetchWorkoutPrograms();
+  
+  return response;
 }
